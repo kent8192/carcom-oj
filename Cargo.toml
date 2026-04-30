@@ -1,0 +1,13 @@
+[workspace]
+resolver = "2"
+# Contest packages are appended here by `scripts/new.sh` when they are created.
+members = ["cp-lib"]
+
+[profile.release]
+opt-level = 3
+lto = false
+debug = false
+overflow-checks = false
+
+[profile.dev]
+opt-level = 0

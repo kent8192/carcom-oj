@@ -1,0 +1,15 @@
+[package]
+name = "__CONTEST__"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Pinned to the AtCoder 2023 Language Update versions. Codeforces and yukicoder
+# ship a same-or-newer rustc, so these versions work there as well.
+[dependencies]
+proconio = { version = "=0.4.5", features = ["derive"] }
+itertools = "=0.10.5"
+rustc-hash = "=1.1.0"
+num = "=0.4.0"
+ac-library-rs = "=0.1.1"
+cp-lib = { path = "../../cp-lib" }

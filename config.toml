@@ -1,0 +1,27 @@
+[rust]
+toolchain = "1.70.0"
+edition = "2021"
+profile = "release"
+
+[bundle]
+tool = "cargo-equip"
+extra_args = ["--remove", "docs", "--minify", "libs", "--resolve-cfgs"]
+
+[test]
+auto_before_submit = true
+default_tle_sec = 2
+
+[atcoder]
+url = "https://atcoder.jp/"
+language_id = "5054"
+language_name = "Rust (rustc 1.70.0)"
+
+[codeforces]
+url = "https://codeforces.com/"
+language_id = "75"
+language_name = "Rust 2021"
+
+[yukicoder]
+url = "https://yukicoder.me/"
+language_id = "rust"
+language_name = "Rust"
