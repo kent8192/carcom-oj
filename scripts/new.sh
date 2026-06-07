@@ -16,9 +16,9 @@ pkg_dir="$CONTESTS_DIR/$contest_id"
 [ -d "$pkg_dir" ] && die "contest dir already exists: $pkg_dir"
 
 info "fetching contest metadata: $contest_url"
-contest_json="$(oj-api get-contest "$contest_url")"
+contest_json="$("$ROOT/.venv/bin/python" "$SCRIPT_DIR/atcoder-metadata.py" contest "$contest_url")"
 status="$(echo "$contest_json" | jq -r '.status')"
-[ "$status" = "ok" ] || die "oj-api get-contest failed: $contest_json"
+[ "$status" = "ok" ] || die "fetch contest metadata failed: $contest_json"
 
 problem_count="$(echo "$contest_json" | jq '.result.problems | length')"
 [ "$problem_count" -gt 0 ] || die "contest has no problems"
@@ -36,23 +36,14 @@ problems_arr='[]'
 
 for i in $(seq 0 $((problem_count - 1))); do
     p_url="$(echo "$contest_json" | jq -r ".result.problems[$i].url")"
-    p_alias="$(alias_from_url "$p_url")"
+    p_alias="$(echo "$contest_json" | jq -r ".result.problems[$i].alias")"
     [ -n "$p_alias" ] || die "could not derive alias from URL: $p_url"
 
     info "  [$p_alias] $p_url"
 
-    # Fetch full problem detail (timeLimit/memoryLimit are not always in get-contest output).
-    p_full="$(oj-api get-problem "$p_url" 2>/dev/null || echo '{"status":"error"}')"
-    if [ "$(echo "$p_full" | jq -r '.status')" = "ok" ]; then
-        time_limit="$(echo "$p_full" | jq -r '.result.timeLimit // 2000')"
-        memory_limit="$(echo "$p_full" | jq -r '.result.memoryLimit // 256')"
-        full_name="$(echo "$p_full" | jq -r '.result.name // ""')"
-    else
-        time_limit=2000
-        memory_limit=256
-        full_name="$(echo "$contest_json" | jq -r ".result.problems[$i].name // \"\"")"
-        info "    (oj-api get-problem failed; using defaults TLE=2000ms MLE=256MB)"
-    fi
+    time_limit="$(echo "$contest_json" | jq -r ".result.problems[$i].timeLimit")"
+    memory_limit="$(echo "$contest_json" | jq -r ".result.problems[$i].memoryLimit")"
+    full_name="$(echo "$contest_json" | jq -r ".result.problems[$i].name // \"\"")"
 
     # Append [[bin]] entry.
     cat >> "$pkg_dir/Cargo.toml" <<EOF

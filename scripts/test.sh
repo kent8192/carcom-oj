@@ -25,18 +25,17 @@ tle_sec="$(awk "BEGIN{printf \"%.3f\", $tle_ms/1000}")"
 profile="$(cfg_get rust.profile)"
 if [ "$profile" = "release" ]; then
     build_flags=(--release)
-    bin_dir="$ROOT/target/release"
 else
     build_flags=()
-    bin_dir="$ROOT/target/debug"
 fi
 
 info "building $contest::$alias_  (profile=$profile)"
-cargo build "${build_flags[@]}" \
+bin_path="$(cargo build "${build_flags[@]}" \
     --manifest-path "$pkg_dir/Cargo.toml" \
-    --bin "$alias_"
-
-bin_path="$bin_dir/$alias_"
+    --bin "$alias_" \
+    --message-format=json \
+    | jq -r --arg bin "$alias_" 'select(.reason=="compiler-artifact" and .target.name==$bin and .executable != null) | .executable' \
+    | tail -n 1)"
 [ -x "$bin_path" ] || die "binary not produced: $bin_path"
 
 tests_dir="$pkg_dir/tests/$alias_"

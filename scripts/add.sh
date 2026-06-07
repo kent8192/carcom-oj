@@ -20,9 +20,9 @@ existing="$(meta_get "$contest" --arg a "$alias_" \
 [ -z "$existing" ] || die "alias '$alias_' already exists in $contest"
 
 info "fetching problem metadata: $problem_url"
-p_full="$(oj-api get-problem "$problem_url")"
+p_full="$("$ROOT/.venv/bin/python" "$SCRIPT_DIR/atcoder-metadata.py" problem "$problem_url")"
 [ "$(echo "$p_full" | jq -r '.status')" = "ok" ] \
-    || die "oj-api get-problem failed: $p_full"
+    || die "fetch problem metadata failed: $p_full"
 
 time_limit="$(echo "$p_full" | jq -r '.result.timeLimit // 2000')"
 memory_limit="$(echo "$p_full" | jq -r '.result.memoryLimit // 256')"

@@ -38,6 +38,7 @@ name = "carcom-oj"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "beautifulsoup4" },
     { name = "online-judge-api-client" },
     { name = "online-judge-tools" },
     { name = "requests" },
@@ -47,6 +48,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "beautifulsoup4", specifier = "==4.14.3" },
     { name = "online-judge-api-client", specifier = "==10.10.1" },
     { name = "online-judge-tools", specifier = "==11.5.1" },
     { name = "requests", specifier = "==2.34.2" },
