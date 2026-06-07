@@ -8,3 +8,5 @@
 .vscode/
 .serena/
 .venv/
+__pycache__/
+*.pyc

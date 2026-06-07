@@ -15,6 +15,10 @@ setup:
 login SITE:
     "{{ ROOT }}/scripts/login.sh" "$1"
 
+# Import an AtCoder REVEL_SESSION cookie copied from a normal browser
+login-cookie *ARGS:
+    "{{ ROOT }}/.venv/bin/python" "{{ ROOT }}/scripts/import-atcoder-cookie.py" "$@"
+
 # Create a new contest workspace from CONTEST_URL (downloads all sample cases)
 new CONTEST_URL:
     "{{ ROOT }}/scripts/new.sh" "$1"
