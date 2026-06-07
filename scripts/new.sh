@@ -5,6 +5,7 @@ source "$(dirname "$0")/lib.sh"
 
 contest_url="${1:?usage: new.sh CONTEST_URL}"
 require_cmd oj oj-api jq yq
+ensure_oj_runtime
 
 site="$(detect_site "$contest_url")"
 contest_id="$(contest_id_from_url "$contest_url")"

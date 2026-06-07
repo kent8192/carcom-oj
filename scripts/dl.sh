@@ -6,6 +6,7 @@ source "$(dirname "$0")/lib.sh"
 contest="${1:?usage: dl.sh CONTEST ALIAS}"
 alias_="${2:?usage: dl.sh CONTEST ALIAS}"
 require_cmd oj jq yq
+ensure_oj_runtime
 
 pkg_dir="$CONTESTS_DIR/$contest"
 [ -d "$pkg_dir" ] || die "contest not found: $pkg_dir"

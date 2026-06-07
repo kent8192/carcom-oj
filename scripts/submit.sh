@@ -7,6 +7,7 @@ contest="${1:?usage: submit.sh CONTEST ALIAS [--no-test] [--yes] [extra oj submi
 alias_="${2:?usage: submit.sh CONTEST ALIAS [--no-test] [--yes] [extra oj submit args]}"
 shift 2
 require_cmd cargo oj oj-api cargo-equip jq yq
+ensure_oj_runtime
 
 pkg_dir="$CONTESTS_DIR/$contest"
 [ -d "$pkg_dir" ] || die "contest not found: $pkg_dir"

@@ -5,6 +5,7 @@ source "$(dirname "$0")/lib.sh"
 
 site="${1:?usage: login.sh SITE  (atcoder|codeforces|yukicoder)}"
 require_cmd oj yq
+ensure_oj_runtime
 
 url="$(cfg_get "${site}.url")"
 [ -n "$url" ] && [ "$url" != "null" ] || die "unknown site: $site (check config.toml)"

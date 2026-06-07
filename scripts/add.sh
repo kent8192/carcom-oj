@@ -6,6 +6,7 @@ source "$(dirname "$0")/lib.sh"
 contest="${1:?usage: add.sh CONTEST PROBLEM_URL}"
 problem_url="${2:?usage: add.sh CONTEST PROBLEM_URL}"
 require_cmd oj oj-api jq yq
+ensure_oj_runtime
 
 pkg_dir="$CONTESTS_DIR/$contest"
 [ -d "$pkg_dir" ] || die "contest not found: $pkg_dir (run 'just new ...' first)"

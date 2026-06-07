@@ -29,6 +29,31 @@ require_cmd() {
     fi
 }
 
+ensure_oj_runtime() {
+    local oj_path
+    local shebang
+    local python_path
+    local err
+    oj_path="$(command -v oj)"
+    IFS= read -r shebang <"$oj_path" || return 0
+
+    case "$shebang" in
+        '#!'*python*) python_path="${shebang#\#!}" ;;
+        *) return 0 ;;
+    esac
+
+    case "$python_path" in
+        */env\ *) return 0 ;;
+    esac
+
+    if ! err="$("$python_path" -c 'import distutils.version' 2>&1)"; then
+        if grep -q "No module named 'distutils'" <<<"$err"; then
+            die "online-judge-tools cannot import distutils. If installed with pipx, run: pipx inject online-judge-tools setuptools"
+        fi
+        die "online-judge-tools failed to start: $err"
+    fi
+}
+
 # detect_site URL -> "atcoder" | "codeforces" | "yukicoder"
 detect_site() {
     local url="$1"
