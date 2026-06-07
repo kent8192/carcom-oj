@@ -4,6 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 site="${1:?usage: login.sh SITE  (atcoder|codeforces|yukicoder)}"
+require_local_python_env oj
 require_cmd oj yq
 ensure_oj_runtime
 

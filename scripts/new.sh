@@ -4,6 +4,7 @@ set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
 contest_url="${1:?usage: new.sh CONTEST_URL}"
+require_local_python_env oj oj-api
 require_cmd oj oj-api jq yq
 ensure_oj_runtime
 

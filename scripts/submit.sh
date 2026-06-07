@@ -6,6 +6,7 @@ source "$(dirname "$0")/lib.sh"
 contest="${1:?usage: submit.sh CONTEST ALIAS [--no-test] [--yes] [extra oj submit args]}"
 alias_="${2:?usage: submit.sh CONTEST ALIAS [--no-test] [--yes] [extra oj submit args]}"
 shift 2
+require_local_python_env oj oj-api
 require_cmd cargo oj oj-api cargo-equip jq yq
 ensure_oj_runtime
 

@@ -8,6 +8,12 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_FILE="$ROOT/config.toml"
 TEMPLATES_DIR="$ROOT/templates"
 CONTESTS_DIR="$ROOT/contests"
+VENV_DIR="$ROOT/.venv"
+VENV_BIN="$VENV_DIR/bin"
+
+if [ -d "$VENV_BIN" ]; then
+    PATH="$VENV_BIN:$PATH"
+fi
 
 die() {
     printf '\033[1;31merror\033[0m: %s\n' "$*" >&2
@@ -29,6 +35,24 @@ require_cmd() {
     fi
 }
 
+require_local_python_env() {
+    local missing=()
+    local c
+
+    command -v uv >/dev/null 2>&1 \
+        || die "missing required command: uv (install uv, then run: just setup)"
+
+    for c in "$@"; do
+        [ -x "$VENV_BIN/$c" ] || missing+=("$c")
+    done
+
+    if [ "${#missing[@]}" -gt 0 ]; then
+        die "local Python environment is missing tools (${missing[*]}). Run: just setup"
+    fi
+
+    PATH="$VENV_BIN:$PATH"
+}
+
 ensure_oj_runtime() {
     local oj_path
     local shebang
@@ -48,7 +72,7 @@ ensure_oj_runtime() {
 
     if ! err="$("$python_path" -c 'import distutils.version' 2>&1)"; then
         if grep -q "No module named 'distutils'" <<<"$err"; then
-            die "online-judge-tools cannot import distutils. If installed with pipx, run: pipx inject online-judge-tools setuptools"
+            die "online-judge-tools cannot import distutils. Run: just setup"
         fi
         die "online-judge-tools failed to start: $err"
     fi
