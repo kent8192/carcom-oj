@@ -1,0 +1,13 @@
+[project]
+name = "carcom-oj"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "online-judge-tools==11.5.1",
+    "online-judge-api-client==10.10.1",
+    "selenium==4.44.0",
+    "setuptools==82.0.1",
+]
+
+[tool.uv]
+package = false

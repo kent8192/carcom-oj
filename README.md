@@ -19,7 +19,8 @@ rustup install 1.70.0
 
 `just setup` はリポジトリ直下に `.venv` を作成し、`online-judge-tools` (`oj`)、
 `online-judge-api-client` (`oj-api`)、Selenium などの Python 依存をそこへ入れる。
-各 `just` レシピはこのローカル `.venv` の `oj` / `oj-api` だけを使う。
+依存は `pyproject.toml` に定義し、`uv.lock` で固定している。各 `just` レシピは
+このローカル `.venv` の `oj` / `oj-api` だけを使う。
 
 リポジトリのルートで `just login atcoder` を一度実行して Cookie を取得する。
 Selenium が入っていればブラウザログインが起動する(`brew install --cask firefox && brew install geckodriver` 等)。

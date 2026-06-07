@@ -9,8 +9,7 @@ default:
 
 # Create/update the project-local Python environment
 setup:
-    cd "{{ ROOT }}" && uv venv --python 3.12 --allow-existing .venv
-    cd "{{ ROOT }}" && uv pip install -r requirements.txt
+    cd "{{ ROOT }}" && uv sync --locked
 
 # Login to a judge (atcoder | codeforces | yukicoder)
 login SITE:
