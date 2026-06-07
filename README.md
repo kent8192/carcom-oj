@@ -1,100 +1,194 @@
 # carcom-oj
 
-`cargo-compete` を [`online-judge-tool`](https://github.com/online-judge-tools/oj) (`oj`) と
-[`online-judge-api-client`](https://github.com/online-judge-tools/api-client) (`oj-api`)、そして
-[`cargo-equip`](https://github.com/qryxip/cargo-equip) を組み合わせて Just + 薄い shell で再現したワークフロー。
+A Rust workspace template for competitive programming.
 
-- 対応サイト: AtCoder / Codeforces / yukicoder
-- 言語: Rust(AtCoder の Rust 1.70.0 を基準)
-- 提出方法: `cargo-equip` で単一ファイルにバンドル → `oj submit`
+This repository recreates the main `cargo-compete` workflow with
+[`online-judge-tools`](https://github.com/online-judge-tools/oj) (`oj`),
+[`online-judge-api-client`](https://github.com/online-judge-tools/api-client)
+(`oj-api`), [`cargo-equip`](https://github.com/qryxip/cargo-equip), Just, and
+small shell scripts.
 
-## セットアップ
+- Supported sites: AtCoder / Codeforces / yukicoder
+- Language: Rust, targeting AtCoder's Rust 1.89.0 / edition 2024 environment
+- Submission flow: bundle into a single file with `cargo-equip`, then submit with `oj submit`
+
+## Use As A Template
+
+Create your own repository from GitHub's `Use this template`, or clone it and replace the remote.
+
+```sh
+git clone <your-repository-url> my-oj
+cd my-oj
+git remote -v
+```
+
+Rename the visible project name if needed. This is not required for functionality, but it is worth doing early if the repository will be shared.
+
+```sh
+perl -pi -e 's/carcom-oj/my-oj/g' README.md pyproject.toml
+```
+
+The intended template state has an empty `contests/` directory and no generated contests committed. If you delete generated contests to restore the template state, also reset `Cargo.toml` workspace members to only `["cp-lib"]`.
+
+```toml
+members = ["cp-lib"]
+```
+
+## Setup
+
+Example for macOS.
 
 ```sh
 brew install just jq yq uv
-just setup
+rustup install 1.89.0
 cargo install cargo-equip
-rustup install 1.70.0
+just setup
 ```
 
-`just setup` はリポジトリ直下に `.venv` を作成し、`online-judge-tools` (`oj`)、
-`online-judge-api-client` (`oj-api`)、Selenium などの Python 依存をそこへ入れる。
-依存は `pyproject.toml` に定義し、`uv.lock` で固定している。各 `just` レシピは
-このローカル `.venv` の `oj` / `oj-api` だけを使う。
+`just setup` creates a repository-local `.venv` and installs Python dependencies such as `online-judge-tools`, `online-judge-api-client`, and Selenium. Dependencies are declared in `pyproject.toml` and locked by `uv.lock`. Each `just` recipe prefers the local `.venv` versions of `oj` and `oj-api`.
 
-AtCoder のログイン画面には Cloudflare Turnstile があるため、`oj` の CUI ログインでは通らない。
-通常のブラウザで AtCoder にログインし、開発者ツールから `REVEL_SESSION` cookie をコピーしてから
-`just login-cookie` で `online-judge-tools` の `cookie.jar` に取り込む。
-環境変数で渡す場合は `ATCODER_REVEL_SESSION='...' just login-cookie` を使う。
-どうしても `oj` の WebDriver ログインを試す場合だけ
-`OJ_USE_BROWSER=always just login atcoder` のように指定する。
+AtCoder's login page uses Cloudflare Turnstile, so `oj`'s CUI login often cannot complete. Log in to AtCoder with a normal browser, copy the `REVEL_SESSION` cookie from developer tools, then import it.
 
-## 主要コマンド
+```sh
+ATCODER_REVEL_SESSION='...' just login-cookie
+```
 
-すべて `just <recipe>` 形式。レシピ一覧は `just` で表示。
+Only use the WebDriver login path when you explicitly want to try it.
 
-| レシピ | 役割 |
+```sh
+OJ_USE_BROWSER=always just login atcoder
+```
+
+## Validation
+
+Immediately after cloning the template, first check the dependencies and root workspace.
+
+```sh
+just
+just setup
+cargo check --workspace
+cargo equip --version
+```
+
+Then validate contest generation and sample testing with a small AtCoder contest.
+
+```sh
+just new https://atcoder.jp/contests/abc001
+just ls abc001
+just test abc001 1
+```
+
+Right after `just new`, `1.rs` is only a TODO skeleton, so `just test abc001 1` will fail. For ABC001 1, solve `contests/abc001/src/bin/1.rs` and run the test again.
+
+```rust
+use proconio::input;
+
+fn main() {
+    input! {
+        h1: i32,
+        h2: i32,
+    }
+
+    println!("{}", h1 - h2);
+}
+```
+
+To re-download samples:
+
+```sh
+just dl abc001 1
+just test abc001 1
+```
+
+To open the problem page:
+
+```sh
+just open abc001 1
+```
+
+Submit only after you are logged in and sample tests pass. This performs a real submission, so do not run it casually just for validation.
+
+```sh
+just submit abc001 1 -- --yes
+```
+
+## Commands
+
+All commands use `just <recipe>`. Run `just` to list available recipes.
+
+| Recipe | Purpose |
 | --- | --- |
-| `just login SITE` | ログイン (`atcoder` / `codeforces` / `yukicoder`) |
-| `just login-cookie` | ブラウザからコピーした AtCoder `REVEL_SESSION` を取り込む |
-| `just new CONTEST_URL` | コンテスト一括生成。サンプルも全問 DL |
-| `just add CONTEST PROBLEM_URL` | 既存パッケージに 1 問追加 |
-| `just dl CONTEST ALIAS` | サンプル再取得 |
-| `just test CONTEST ALIAS [...]` | `cargo build --release --bin ALIAS` → `oj test` |
-| `just submit CONTEST ALIAS [...]` | テスト → `cargo equip` でバンドル → `oj submit` |
-| `just open CONTEST ALIAS` | 問題ページをブラウザで開く |
-| `just ls CONTEST` | 問題一覧 |
+| `just setup` | Create `.venv` and sync Python dependencies |
+| `just login SITE` | Log in (`atcoder` / `codeforces` / `yukicoder`) |
+| `just login-cookie` | Import an AtCoder `REVEL_SESSION` copied from a browser |
+| `just new CONTEST_URL` | Generate a contest package and download all sample cases |
+| `just add CONTEST PROBLEM_URL` | Add one problem to an existing contest |
+| `just dl CONTEST ALIAS` | Re-download samples |
+| `just test CONTEST ALIAS [...]` | Run `cargo build`, then `oj test` |
+| `just submit CONTEST ALIAS [...]` | Run tests, bundle with `cargo equip`, then `oj submit` |
+| `just open CONTEST ALIAS` | Open the problem page in a browser |
+| `just ls CONTEST` | List problems in a contest |
 
-`just test` / `just submit` の追加引数はそのまま `oj test` / `oj submit` に渡る
-(`just test abc300 a -- -e 1e-6` で浮動小数誤差許容、`just submit abc300 a -- --no-test --yes` 等)。
+Extra arguments for `just test` and `just submit` are forwarded to `oj test` and `oj submit`.
 
-## 典型ワークフロー
+```sh
+just test abc300 a -- -e 1e-6
+just submit abc300 a -- --no-test --yes
+```
+
+## Typical Workflow
 
 ```sh
 just login-cookie
 just new https://atcoder.jp/contests/abc300
 $EDITOR contests/abc300/src/bin/a.rs
 just test abc300 a
-just submit abc300 a
+just submit abc300 a -- --yes
 ```
 
-## ディレクトリ構造
+To add a single problem to an existing contest:
 
+```sh
+just add abc300 https://atcoder.jp/contests/abc300/tasks/abc300_b
+just test abc300 b
 ```
+
+## Directory Layout
+
+```text
 carcom-oj/
-├── Justfile                    # エントリポイント
-├── config.toml                 # 言語ID・toolchain・bundle 設定
-├── rust-toolchain.toml         # rustc 1.70.0 (AtCoder と一致)
-├── Cargo.toml                  # workspace ルート (members = ["cp-lib", "contests/*"])
-├── cp-lib/                     # 共通ライブラリ。cargo-equip でインライン展開される
-├── templates/                  # コンテスト/問題ひな形
-├── scripts/                    # justfile から呼ばれる薄い shell
+├── Justfile                    # Entry point
+├── config.toml                 # Language IDs, toolchain, and bundling settings
+├── rust-toolchain.toml         # rustc 1.89.0, matching AtCoder
+├── Cargo.toml                  # Workspace root
+├── cp-lib/                     # Shared library, inlined by cargo-equip
+├── templates/                  # Contest and problem templates
+├── scripts/                    # Shell scripts called by Justfile
 └── contests/<contest>/
-    ├── Cargo.toml              # workspace member。各問題は [[bin]]
-    ├── src/bin/<alias>.rs      # 1 問 = 1 binary
-    ├── tests/<alias>/          # oj download が置く sample-*.in/.out
-    └── meta.json               # alias ↔ URL/title/TLE/MLE
+    ├── Cargo.toml              # Workspace member; each problem is a [[bin]]
+    ├── src/bin/<alias>.rs      # One problem = one binary
+    ├── tests/<alias>/          # sample-*.in/.out files from oj download
+    └── meta.json               # Alias, URL, title, TLE, and MLE
 ```
 
-## 設定 (`config.toml`)
+## Configuration
 
-| キー | 役割 |
+Customize behavior in `config.toml`.
+
+| Key | Purpose |
 | --- | --- |
-| `rust.profile` | `release` 推奨(`debug` は AtCoder で TLE になりやすい) |
-| `bundle.extra_args` | `cargo equip` に渡す追加引数 |
-| `test.auto_before_submit` | `submit` の前に自動でテストを走らせるか |
-| `<site>.language_id` | 提出時のデフォルト言語 ID。`oj-api guess-language-id` で上書きされる |
+| `rust.profile` | `release` is recommended. `debug` is likely to TLE on AtCoder |
+| `bundle.extra_args` | Extra arguments passed to `cargo equip` |
+| `test.auto_before_submit` | Whether to run tests automatically before `submit` |
+| `<site>.language_id` | Default submission language ID. Overridden when `oj-api guess-language-id` succeeds |
 
-## 制限・既知の挙動
+## Growing The Library
 
-- `oj submit` は filename 必須なので `/tmp/carcom-<contest>-<alias>.rs` を経由する。
-- 提出ステータスの実時間監視(`cargo compete watch submissions` 相当)は実装していない。
-  AtCoder のときは提出後に `~/Submissions/me` ページが自動で開く。
-- システムテスト取得 (`oj download --system`) は未実装。手動で `--system` を加えれば取れる。
-- AtCoder の rated 参加申請は実装していない。事前にブラウザで参加ボタンを押すこと。
+Add `pub mod foo;` to `cp-lib/src/lib.rs`, then use it from problems with `use cp_lib::foo;` or `use cp_lib::*;`. On submission, `cargo equip` follows references and folds the used code into a single file. Unused modules are removed automatically by the tool.
 
-## ライブラリの育て方
+## Limitations And Known Behavior
 
-`cp-lib/src/lib.rs` に `pub mod foo;` を増やすだけ。
-提出時に `cargo equip` が `use cp_lib::foo;` の参照を辿って単一ファイルへ畳み込む。
-未使用 `mod` は同ツールで自動削除される。
+- `oj submit` requires a filename, so submissions go through `/tmp/carcom-<contest>-<alias>.rs`.
+- Real-time submission watching, equivalent to `cargo compete watch submissions`, is not implemented. For AtCoder, the submissions page is opened after submission.
+- System test download, `oj download --system`, does not have a dedicated recipe. Run `oj download --system` manually if needed.
+- Rated participation registration on AtCoder is not implemented. Press the participation button in your browser beforehand.

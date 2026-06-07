@@ -42,12 +42,17 @@ fi
 # Bundle with cargo-equip.
 bundled="/tmp/carcom-${contest}-${alias_}.rs"
 extra_args="$(cfg_get_array bundle.extra_args)"
+site_extra_args=()
+if [ "$site" = "atcoder" ]; then
+    site_extra_args+=(--exclude-atcoder-202301-crates)
+fi
 info "bundling with cargo-equip -> $bundled"
 # shellcheck disable=SC2086
 cargo equip \
     --manifest-path "$pkg_dir/Cargo.toml" \
     --bin "$alias_" \
     $extra_args \
+    "${site_extra_args[@]}" \
     > "$bundled"
 
 # Resolve language id: prefer oj-api guess, fallback to config.toml default.
