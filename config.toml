@@ -1,6 +1,6 @@
 [rust]
-toolchain = "1.70.0"
-edition = "2021"
+toolchain = "1.89.0"
+edition = "2024"
 profile = "release"
 
 [bundle]
@@ -14,12 +14,12 @@ default_tle_sec = 2
 [atcoder]
 url = "https://atcoder.jp/"
 language_id = "5054"
-language_name = "Rust (rustc 1.70.0)"
+language_name = "Rust (rustc 1.89.0)"
 
 [codeforces]
 url = "https://codeforces.com/"
 language_id = "75"
-language_name = "Rust 2021"
+language_name = "Rust 2024"
 
 [yukicoder]
 url = "https://yukicoder.me/"
