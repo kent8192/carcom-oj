@@ -23,7 +23,9 @@ rustup install 1.70.0
 このローカル `.venv` の `oj` / `oj-api` だけを使う。
 
 リポジトリのルートで `just login atcoder` を一度実行して Cookie を取得する。
-Selenium が入っていればブラウザログインが起動する(`brew install --cask firefox && brew install geckodriver` 等)。
+Cloudflare / bot 検証に引っかかりやすいので、ログインはデフォルトで Selenium ブラウザを使わず
+CUI 入力にしている。どうしても `oj` の WebDriver ログインを使う場合だけ
+`OJ_USE_BROWSER=always just login atcoder` のように指定する。
 
 ## 主要コマンド
 
