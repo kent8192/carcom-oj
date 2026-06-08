@@ -35,7 +35,7 @@ dl CONTEST ALIAS:
 test CONTEST ALIAS *EXTRA:
     "{{ ROOT }}/scripts/test.sh" "$@"
 
-# Bundle with cargo-equip and submit; extra: --no-test, --yes, plus oj submit args
+# Bundle local cp-lib and submit; extra: --no-test, --yes, plus oj submit args
 submit CONTEST ALIAS *EXTRA:
     "{{ ROOT }}/scripts/submit.sh" "$@"
 

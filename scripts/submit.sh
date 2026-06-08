@@ -7,7 +7,7 @@ contest="${1:?usage: submit.sh CONTEST ALIAS [--no-test] [--yes] [extra oj submi
 alias_="${2:?usage: submit.sh CONTEST ALIAS [--no-test] [--yes] [extra oj submit args]}"
 shift 2
 require_local_python_env oj oj-api
-require_cmd cargo oj oj-api cargo-equip jq yq
+require_cmd cargo oj oj-api jq yq python3 rustfmt
 ensure_oj_runtime
 
 pkg_dir="$CONTESTS_DIR/$contest"
@@ -39,21 +39,11 @@ if [ "$no_test" -eq 0 ] && [ "$auto_pre" = "true" ]; then
     "$ROOT/scripts/test.sh" "$contest" "$alias_"
 fi
 
-# Bundle with cargo-equip.
+# Bundle local cp-lib into a single Rust source file.
 bundled="/tmp/carcom-${contest}-${alias_}.rs"
-extra_args="$(cfg_get_array bundle.extra_args)"
-site_extra_args=()
-if [ "$site" = "atcoder" ]; then
-    site_extra_args+=(--exclude-atcoder-202301-crates)
-fi
-info "bundling with cargo-equip -> $bundled"
-# shellcheck disable=SC2086
-cargo equip \
-    --manifest-path "$pkg_dir/Cargo.toml" \
-    --bin "$alias_" \
-    $extra_args \
-    "${site_extra_args[@]}" \
-    > "$bundled"
+info "bundling local cp-lib -> $bundled"
+python3 "$ROOT/scripts/bundle.py" "$contest" "$alias_" >"$bundled"
+rustfmt "$bundled"
 
 # Resolve language id: prefer oj-api guess, fallback to config.toml default.
 lang_default="$(cfg_get "${site}.language_id")"

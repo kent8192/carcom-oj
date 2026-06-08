@@ -3,10 +3,6 @@ toolchain = "1.89.0"
 edition = "2024"
 profile = "release"
 
-[bundle]
-tool = "cargo-equip"
-extra_args = ["--remove", "docs", "--minify", "libs"]
-
 [test]
 auto_before_submit = true
 default_tle_sec = 2

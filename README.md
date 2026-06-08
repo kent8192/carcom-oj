@@ -5,12 +5,11 @@ A Rust workspace template for competitive programming.
 This repository recreates the main `cargo-compete` workflow with
 [`online-judge-tools`](https://github.com/online-judge-tools/oj) (`oj`),
 [`online-judge-api-client`](https://github.com/online-judge-tools/api-client)
-(`oj-api`), [`cargo-equip`](https://github.com/qryxip/cargo-equip), Just, and
-small shell scripts.
+(`oj-api`), Just, and small shell/Python scripts.
 
 - Supported sites: AtCoder / Codeforces / yukicoder
 - Language: Rust, targeting AtCoder's Rust 1.89.0 / edition 2024 environment
-- Submission flow: bundle into a single file with `cargo-equip`, then submit with `oj submit`
+- Submission flow: bundle local `cp-lib` into a single file, then submit with `oj submit`
 
 ## Use As A Template
 
@@ -41,7 +40,6 @@ Example for macOS.
 ```sh
 brew install just jq yq uv
 rustup install 1.89.0
-cargo install cargo-equip
 just setup
 ```
 
@@ -67,7 +65,6 @@ Immediately after cloning the template, first check the dependencies and root wo
 just
 just setup
 cargo check --workspace
-cargo equip --version
 ```
 
 Then validate contest generation and sample testing with a small AtCoder contest.
@@ -125,7 +122,7 @@ All commands use `just <recipe>`. Run `just` to list available recipes.
 | `just add CONTEST PROBLEM_URL` | Add one problem to an existing contest |
 | `just dl CONTEST ALIAS` | Re-download samples |
 | `just test CONTEST ALIAS [...]` | Run `cargo build`, then `oj test` |
-| `just submit CONTEST ALIAS [...]` | Run tests, bundle with `cargo equip`, then `oj submit` |
+| `just submit CONTEST ALIAS [...]` | Run tests, bundle local `cp-lib`, then `oj submit` |
 | `just open CONTEST ALIAS` | Open the problem page in a browser |
 | `just ls CONTEST` | List problems in a contest |
 
@@ -158,10 +155,10 @@ just test abc300 b
 ```text
 carcom-oj/
 ├── Justfile                    # Entry point
-├── config.toml                 # Language IDs, toolchain, and bundling settings
+├── config.toml                 # Language IDs, toolchain, and test settings
 ├── rust-toolchain.toml         # rustc 1.89.0, matching AtCoder
 ├── Cargo.toml                  # Workspace root
-├── cp-lib/                     # Shared library, inlined by cargo-equip
+├── cp-lib/                     # Shared library, appended by scripts/bundle.py
 ├── templates/                  # Contest and problem templates
 ├── scripts/                    # Shell scripts called by Justfile
 └── contests/<contest>/
@@ -178,13 +175,12 @@ Customize behavior in `config.toml`.
 | Key | Purpose |
 | --- | --- |
 | `rust.profile` | `release` is recommended. `debug` is likely to TLE on AtCoder |
-| `bundle.extra_args` | Extra arguments passed to `cargo equip` |
 | `test.auto_before_submit` | Whether to run tests automatically before `submit` |
 | `<site>.language_id` | Default submission language ID. Overridden when `oj-api guess-language-id` succeeds |
 
 ## Growing The Library
 
-Add `pub mod foo;` to `cp-lib/src/lib.rs`, then use it from problems with `use cp_lib::foo;` or `use cp_lib::*;`. On submission, `cargo equip` follows references and folds the used code into a single file. Unused modules are removed automatically by the tool.
+Add `pub mod foo;` to `cp-lib/src/lib.rs`, then use it from problems with `use cp_lib::foo;` or `use cp_lib::*;`. On submission, `scripts/bundle.py` appends `cp-lib` as `mod cp_lib` and recursively expands `pub mod foo;` from `cp-lib/src/foo.rs` or `cp-lib/src/foo/mod.rs`. External crates such as `proconio` and `itertools` remain normal judge-side dependencies.
 
 ## Limitations And Known Behavior
 
