@@ -20,14 +20,17 @@ url="$(meta_get "$contest" --arg a "$alias_" \
 
 site="$(meta_get "$contest" '.site')"
 
-# Parse optional flags. Anything else is forwarded to `oj submit`.
+# Parse optional flags. Anything else is forwarded to the submit command.
 no_test=0
-oj_extra=()
+no_open=0
+submit_extra=()
 while [ $# -gt 0 ]; do
     case "$1" in
         --no-test) no_test=1 ;;
-        --) shift; oj_extra+=("$@"); break ;;
-        *) oj_extra+=("$1") ;;
+        --no-open) no_open=1; submit_extra+=("$1") ;;
+        --dry-run) no_open=1; submit_extra+=("$1") ;;
+        --) shift; submit_extra+=("$@"); break ;;
+        *) submit_extra+=("$1") ;;
     esac
     shift
 done
@@ -45,22 +48,27 @@ info "bundling local cp-lib -> $bundled"
 python3 "$ROOT/scripts/bundle.py" "$contest" "$alias_" >"$bundled"
 rustfmt "$bundled"
 
-# Resolve language id: prefer oj-api guess, fallback to config.toml default.
+# Resolve language id from config. We intentionally avoid oj-api guessing here:
+# current online-judge-tools parsers can fail on AtCoder problem pages before
+# submission, even when the language is configured explicitly.
 lang_default="$(cfg_get "${site}.language_id")"
 lang_id="$lang_default"
-guessed=""
-if guessed="$(oj-api guess-language-id "$url" --file "$bundled" 2>/dev/null \
-    | jq -r '.result.id // empty')"; then
-    if [ -n "$guessed" ]; then
-        lang_id="$guessed"
-    fi
+lang_name="$(cfg_get "${site}.language_name")"
+
+info "submitting $url  (language=$lang_id)"
+if [ "$site" = "atcoder" ]; then
+    "$ROOT/.venv/bin/python" "$SCRIPT_DIR/atcoder-submit.py" \
+        "$url" \
+        --file "$bundled" \
+        --language "$lang_id" \
+        --language-name "$lang_name" \
+        "${submit_extra[@]}"
+else
+    oj submit "$url" "$bundled" --language "$lang_id" "${submit_extra[@]}"
 fi
 
-info "submitting $url  (language=$lang_id${guessed:+, guessed})"
-oj submit "$url" "$bundled" --language "$lang_id" "${oj_extra[@]}"
-
 # Open submissions page on AtCoder (substitute for `cargo compete watch submissions`).
-if [ "$site" = "atcoder" ]; then
+if [ "$site" = "atcoder" ] && [ "$no_open" -eq 0 ]; then
     contest_part="$(echo "$url" | sed -E 's|(.*/contests/[^/]+).*|\1|')"
     info "opening $contest_part/submissions/me"
     open "$contest_part/submissions/me" 2>/dev/null || true
