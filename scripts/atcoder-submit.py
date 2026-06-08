@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import shutil
+import subprocess
 import sys
 import time
+import webbrowser
 from http.cookiejar import LWPCookieJar
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -18,6 +21,10 @@ DEFAULT_COOKIE = Path.home() / "Library/Application Support/online-judge-tools/c
 
 
 class SubmitError(Exception):
+    pass
+
+
+class BrowserHandoff(Exception):
     pass
 
 
@@ -102,6 +109,51 @@ def resolve_language(
     raise SubmitError(f"language id {language_id} not found for {task}{detail}")
 
 
+def requires_browser_challenge(soup: bs4.BeautifulSoup) -> bool:
+    if soup.select_one(".cf-challenge"):
+        return True
+    for script in soup.find_all("script", src=True):
+        if "challenges.cloudflare.com/turnstile" in str(script["src"]):
+            return True
+    return bool(soup.find(attrs={"data-sitekey": True}))
+
+
+def copy_to_clipboard(text: str) -> bool:
+    command = shutil.which("pbcopy")
+    if command is None:
+        return False
+    try:
+        subprocess.run([command], input=text, text=True, check=True)
+    except (OSError, subprocess.CalledProcessError):
+        return False
+    return True
+
+
+def browser_handoff(
+    args: argparse.Namespace,
+    submit_url: str,
+    task: str,
+    language_id: str,
+    language_label: str,
+    code: str,
+) -> None:
+    copied = copy_to_clipboard(code)
+    if not args.no_open:
+        webbrowser.open(submit_url)
+    lines = [
+        "AtCoder requires a browser challenge on the submit page, so direct CLI POST cannot submit this code.",
+        f"Open: {submit_url}",
+        f"Task: {task}",
+        f"Language: {language_id} ({language_label})",
+        f"Source file: {args.file}",
+    ]
+    if copied:
+        lines.append("The bundled source was copied to the clipboard.")
+    else:
+        lines.append("Copy the bundled source file manually; clipboard copy is unavailable.")
+    raise BrowserHandoff("\n".join(lines))
+
+
 def confirm(args: argparse.Namespace, language_id: str, language_label: str, code: str) -> None:
     if args.dry_run:
         print(
@@ -139,11 +191,24 @@ def submit(
         allow_redirects=False,
     )
     if response.status_code not in (302, 303):
-        raise SubmitError(f"AtCoder submit failed: HTTP {response.status_code}")
+        detail = extract_response_errors(response.text)
+        suffix = f": {detail}" if detail else ""
+        raise SubmitError(f"AtCoder submit failed: HTTP {response.status_code}{suffix}")
     location = response.headers.get("Location")
     if not location:
         raise SubmitError("AtCoder submit response did not include Location header")
     return urljoin(submit_url, location)
+
+
+def extract_response_errors(html: str) -> str:
+    soup = bs4.BeautifulSoup(html, "html.parser")
+    messages: list[str] = []
+    for selector in (".alert", ".error", ".has-error", ".text-danger", ".help-block"):
+        for tag in soup.select(selector):
+            text = tag.get_text(" ", strip=True)
+            if text and text not in messages:
+                messages.append(text)
+    return "; ".join(messages)
 
 
 def parse_args() -> argparse.Namespace:
@@ -178,9 +243,12 @@ def main() -> int:
         language_id, language_label = resolve_language(
             soup, task, args.language, args.language_name
         )
-        confirm(args, language_id, language_label, code)
         if args.dry_run:
+            confirm(args, language_id, language_label, code)
             return 0
+        if requires_browser_challenge(soup):
+            browser_handoff(args, submit_url, task, language_id, language_label, code)
+        confirm(args, language_id, language_label, code)
         if args.wait > 0:
             time.sleep(args.wait)
         submission_url = submit(session, submit_url, task, token, language_id, code)
@@ -189,6 +257,9 @@ def main() -> int:
     except (OSError, requests.RequestException, SubmitError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
+    except BrowserHandoff as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
