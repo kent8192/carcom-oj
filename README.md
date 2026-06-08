@@ -176,6 +176,7 @@ Customize behavior in `config.toml`.
 | --- | --- |
 | `rust.profile` | `release` is recommended. `debug` is likely to TLE on AtCoder |
 | `test.auto_before_submit` | Whether to run tests automatically before `submit` |
+| `download.timeout_sec` | Maximum seconds to wait for each problem's sample download during `new` |
 | `<site>.language_id` | Default submission language ID. Overridden when `oj-api guess-language-id` succeeds |
 
 ## Growing The Library

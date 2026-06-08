@@ -7,6 +7,9 @@ profile = "release"
 auto_before_submit = true
 default_tle_sec = 2
 
+[download]
+timeout_sec = 30
+
 [atcoder]
 url = "https://atcoder.jp/"
 language_id = "5054"
