@@ -9,7 +9,7 @@ default_tle_sec = 2
 
 [atcoder]
 url = "https://atcoder.jp/"
-language_id = "5054"
+language_id = "6088"
 language_name = "Rust (rustc 1.89.0)"
 
 [codeforces]
