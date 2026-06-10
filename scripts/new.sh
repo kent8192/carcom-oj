@@ -22,6 +22,7 @@ status="$(echo "$contest_json" | jq -r '.status')"
 
 problem_count="$(echo "$contest_json" | jq '.result.problems | length')"
 [ "$problem_count" -gt 0 ] || die "contest has no problems"
+download_timeout_sec="$(cfg_get download.timeout_sec)"
 
 info "creating package: $pkg_dir ($problem_count problems)"
 mkdir -p "$pkg_dir/src/bin" "$pkg_dir/tests"
@@ -31,8 +32,10 @@ sed -e "s/__CONTEST__/$contest_id/g" \
     "$TEMPLATES_DIR/contest-Cargo.toml.tmpl" \
     > "$pkg_dir/Cargo.toml"
 
-# Build problems[] array piece by piece.
-problems_arr='[]'
+# Build all sources before downloading samples. This keeps later problems
+# available even if an earlier sample download stalls.
+p_urls=()
+p_aliases=()
 
 for i in $(seq 0 $((problem_count - 1))); do
     p_url="$(echo "$contest_json" | jq -r ".result.problems[$i].url")"
@@ -40,10 +43,8 @@ for i in $(seq 0 $((problem_count - 1))); do
     [ -n "$p_alias" ] || die "could not derive alias from URL: $p_url"
 
     info "  [$p_alias] $p_url"
-
-    time_limit="$(echo "$contest_json" | jq -r ".result.problems[$i].timeLimit")"
-    memory_limit="$(echo "$contest_json" | jq -r ".result.problems[$i].memoryLimit")"
-    full_name="$(echo "$contest_json" | jq -r ".result.problems[$i].name // \"\"")"
+    p_urls+=("$p_url")
+    p_aliases+=("$p_alias")
 
     # Append [[bin]] entry.
     cat >> "$pkg_dir/Cargo.toml" <<EOF
@@ -55,25 +56,10 @@ EOF
 
     # Source skeleton.
     cp "$TEMPLATES_DIR/main.rs.tmpl" "$pkg_dir/src/bin/$p_alias.rs"
-
-    # Sample cases.
-    mkdir -p "$pkg_dir/tests/$p_alias"
-    if ! oj download --silent "$p_url" -d "$pkg_dir/tests/$p_alias/" >/dev/null 2>&1; then
-        info "    (sample download failed for $p_alias; skipping)"
-    fi
-
-    # Append problem record.
-    problems_arr="$(jq -c \
-        --arg alias "$p_alias" \
-        --arg name "$full_name" \
-        --arg url "$p_url" \
-        --argjson tle "$time_limit" \
-        --argjson mle "$memory_limit" \
-        '. + [{alias:$alias, name:$name, url:$url, timeLimit:$tle, memoryLimit:$mle}]' \
-        <<<"$problems_arr")"
 done
 
 # Write meta.json.
+problems_arr="$(echo "$contest_json" | jq -c '.result.problems')"
 jq -n \
     --arg contest "$contest_id" \
     --arg site "$site" \
@@ -81,6 +67,18 @@ jq -n \
     --argjson problems "$problems_arr" \
     '{contest:$contest, site:$site, url:$url, problems:$problems}' \
     > "$pkg_dir/meta.json"
+
+# Sample cases. A single stalled `oj download` must not block creation of later
+# problem files.
+for i in "${!p_aliases[@]}"; do
+    p_alias="${p_aliases[$i]}"
+    p_url="${p_urls[$i]}"
+    mkdir -p "$pkg_dir/tests/$p_alias"
+    if ! "$ROOT/.venv/bin/python" "$SCRIPT_DIR/run-with-timeout.py" "$download_timeout_sec" \
+        oj download --silent "$p_url" -d "$pkg_dir/tests/$p_alias/" >/dev/null 2>&1; then
+        info "    (sample download failed or timed out for $p_alias; skipping)"
+    fi
+done
 
 # Register this contest as a workspace member of the root Cargo.toml.
 register_workspace_member "contests/$contest_id"
