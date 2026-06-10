@@ -121,15 +121,15 @@ All commands use `just <recipe>`. Run `just` to list available recipes.
 | `just new CONTEST_URL` | Generate a contest package and download all sample cases |
 | `just add CONTEST PROBLEM_URL` | Add one problem to an existing contest |
 | `just dl CONTEST ALIAS` | Re-download samples |
-| `just test CONTEST ALIAS [...]` | Run `cargo build`, then `oj test` |
+| `just test CONTEST ALIAS [...]` | Run `cargo build`, then repo-local sample tests |
 | `just submit CONTEST ALIAS [...]` | Run tests, bundle local `cp-lib`, then `oj submit` |
 | `just open CONTEST ALIAS` | Open the problem page in a browser |
 | `just ls CONTEST` | List problems in a contest |
 
-Extra arguments for `just test` and `just submit` are forwarded to `oj test` and `oj submit`.
+Extra arguments for `just submit` are forwarded to `oj submit`. `just test` accepts extra arguments for compatibility, but the repo-local sample runner ignores them and prints a warning.
 
 ```sh
-just test abc300 a -- -e 1e-6
+just test abc300 a
 just submit abc300 a -- --no-test --yes
 ```
 
@@ -176,6 +176,7 @@ Customize behavior in `config.toml`.
 | --- | --- |
 | `rust.profile` | `release` is recommended. `debug` is likely to TLE on AtCoder |
 | `test.auto_before_submit` | Whether to run tests automatically before `submit` |
+| `test.local_tle_margin_sec` | Extra seconds added to problem sample time limits for local testing |
 | `download.timeout_sec` | Maximum seconds to wait for each problem's sample download during `new` |
 | `<site>.language_id` | Default submission language ID. Overridden when `oj-api guess-language-id` succeeds |
 

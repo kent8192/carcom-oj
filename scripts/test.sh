@@ -20,7 +20,11 @@ url="$(meta_get "$contest" --arg a "$alias_" \
 
 tle_ms="$(meta_get "$contest" --arg a "$alias_" \
     '(.problems[] | select(.alias==$a) | .timeLimit) // 2000')"
-tle_sec="$(awk "BEGIN{printf \"%.3f\", $tle_ms/1000}")"
+tle_margin_sec="$(cfg_get test.local_tle_margin_sec)"
+if [ -z "$tle_margin_sec" ] || [ "$tle_margin_sec" = "null" ]; then
+    tle_margin_sec=0
+fi
+tle_sec="$(awk "BEGIN{printf \"%.3f\", $tle_ms/1000 + $tle_margin_sec}")"
 
 profile="$(cfg_get rust.profile)"
 if [ "$profile" = "release" ]; then
@@ -41,9 +45,9 @@ bin_path="$(cargo build "${build_flags[@]}" \
 tests_dir="$pkg_dir/tests/$alias_"
 [ -d "$tests_dir" ] || die "no test directory: $tests_dir (run 'just dl $contest $alias_')"
 
-info "running oj test  (TLE=${tle_sec}s)"
-exec oj test \
-    -c "$bin_path" \
-    -d "$tests_dir/" \
-    --tle "$tle_sec" \
+info "running local sample tests  (TLE=${tle_sec}s)"
+RUST_BACKTRACE="${OJ_RUST_BACKTRACE:-0}" exec "$SCRIPT_DIR/local-test.sh" \
+    "$bin_path" \
+    "$tests_dir" \
+    "$tle_sec" \
     "$@"

@@ -31,7 +31,7 @@ add CONTEST PROBLEM_URL:
 dl CONTEST ALIAS:
     "{{ ROOT }}/scripts/dl.sh" "$1" "$2"
 
-# Build & run sample tests; extra args are forwarded to `oj test`
+# Build & run sample tests with the repo-local runner
 test CONTEST ALIAS *EXTRA:
     "{{ ROOT }}/scripts/test.sh" "$@"
 

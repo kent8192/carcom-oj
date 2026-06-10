@@ -6,6 +6,7 @@ profile = "release"
 [test]
 auto_before_submit = true
 default_tle_sec = 2
+local_tle_margin_sec = 1
 
 [download]
 timeout_sec = 30
